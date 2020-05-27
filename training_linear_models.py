@@ -119,9 +119,9 @@ Notes:
     * with engineered features of mm/gram rates, accuracy was 54% with 4.5% std.  Pretty much no improvement.
 
 Deductions:
-    - It looks like the top accuracy is with original features. Engineered features improved it by 1%.
-    - Dimension and weight measurements couldn't deliver top accuracy compared to combined: differences is 3.6% and 1% respectively.
-    - What's interesting that dimension measurements were improved with weight-dimension-rates features to give it extra 2% accuracy. I guess that weights with dimensions help to determine gender of the shell better.
+- It looks like the top accuracy is with original features. Engineered features improved it by 1%.
+- Dimension and weight measurements couldn't deliver top accuracy compared to combined: differences is 3.6% and 1% respectively.
+- What's interesting that dimension measurements were improved with weight-dimension-rates features to give it extra 2% accuracy. I guess that weights with dimensions help to determine gender of the shell better.
 
 
 # <markdown>
@@ -284,22 +284,38 @@ So I am going to test whether the accuracy rate will be increased by 20% to 40% 
 # Training just 'infant' and 'female'
 
 X = df[df['Sex'].isin(['I', 'F'])]
-X.loc[:,'Sex'] = X['Sex'].apply(lambda sex: 0.0 if sex == 'I' else 1.0)
-X = df.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
-y = np.ravel(df.loc[:, ['Sex']].to_numpy())
+y = np.ravel(X.loc[:, ['Sex']].to_numpy())
+X = X.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
 
 lrcv = LogisticRegressionCV(max_iter=3000)
 lrcv.fit(X, y)
 lrcv.score(X, y)
+
+# In [ ]
+# Looking at data
+# X[2]
+# y[3]
+# df_copy = df.copy()
+# sl = df_copy[df_copy['Sex'].isin(['I', 'F'])]
+# sl.Sex.unique()
+# X = sl.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
+# y = np.ravel(sl.loc[:, ['Sex']].to_numpy())
+# len(X)
+# len(y)
+# lrcv = LogisticRegressionCV(max_iter=3000)
+# lrcv.fit(X, y)
+# lrcv.score(X, y)
+
+# Damn, just realised I made a big mistake.
 
 
 # In [ ]
 # Training just 'infant' and 'male'
 
 X = df[df['Sex'].isin(['I', 'M'])]
-X.loc[:,'Sex'] = X['Sex'].apply(lambda sex: 0.0 if sex == 'I' else 1.0)
-X = df.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
-y = np.ravel(df.loc[:, ['Sex']].to_numpy())
+# X.loc[:,'Sex'] = X['Sex'].apply(lambda sex: 0.0 if sex == 'I' else 1.0)
+y = np.ravel(X.loc[:, ['Sex']].to_numpy())
+X = X.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
 
 lrcv = LogisticRegressionCV(max_iter=3000)
 lrcv.fit(X, y)
@@ -309,17 +325,19 @@ lrcv.score(X, y)
 # In [ ]
 # Training just 'infant' and 'female'
 
-X = df[df['Sex'].isin(['I', 'M'])]
-X.loc[:,'Sex'] = X['Sex'].apply(lambda sex: 0.0 if sex == 'I' else 1.0)
+X = df[df['Sex'].isin(['I', 'F'])]
+#X.loc[:,'Sex'] = X['Sex'].apply(lambda sex: 0.0 if sex == 'I' else 1.0)
 
-X = df.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
-y = np.ravel(df.loc[:, ['Sex']].to_numpy())
+y = np.ravel(X.loc[:, ['Sex']].to_numpy())
+X = X.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
 
 lrcv = LogisticRegressionCV(max_iter=3000)
 lrcv.fit(X, y)
 lrcv.score(X, y)
 
 # <markdown>
+**UPDATE**: due to code mistake, the results are not strange anymore and totally make sense upon the expectation: making models to predict between two labels than three improves the model dramatically.
+
 Ok this is really weird: basically that didn't make any difference in performance at all. It's as if model is struggling to understand the differences between two classes even though they are distinct from each other. Maybe because the cross-section where certain samples of both classes meet, but again.
 
 I will have to manually select test samples as to determine...
@@ -378,7 +396,9 @@ def get_lower_whiskers(data, column, sex=''):
 
 # For comparison
 g = sns.catplot(x="Height", y="Sex", kind="box", height=4, aspect=4, data=male_inf_df)
+g.savefig('diagram_images_folder/binary_height_box_plot.png', bbox_inches='tight', pad_inches=1)
 g = sns.catplot(x="Whole", y="Sex", kind="box", height=4, aspect=4, data=male_inf_df)
+g.savefig('diagram_images_folder/binary_whole_box_plot.png', bbox_inches='tight', pad_inches=1)
 get_upper_whiskers(male_inf_df, 'Whole', 'I')
 get_upper_whiskers(male_inf_df, 'Whole', 'M')
 get_lower_whiskers(male_inf_df, 'Whole', 'I')
@@ -533,3 +553,15 @@ y = np.ravel(without_outliers_all_df.loc[:, ['Sex']].to_numpy())
 lrcv = LogisticRegressionCV(max_iter=800)
 lrcv.fit(X, y)
 print("The score:", lrcv.score(X, y))
+
+# In [ ]
+# Testing with all data samples
+without_outliers_all_df = pd.concat([male, female, infant])
+X = without_outliers_all_df.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
+y = np.ravel(without_outliers_all_df.loc[:, ['Sex']].to_numpy())
+X_with_outliers_all_l = df.loc[:, ['Length', 'Diameter', 'Height', 'Whole', 'Shucked', 'Viscera', 'Shell']].to_numpy()
+y_with_outliers_all_l = np.ravel(df.loc[:, ['Sex']].to_numpy())
+
+lrcv = LogisticRegressionCV(max_iter=800)
+lrcv.fit(X, y)
+print("The score:", lrcv.score(X_with_outliers_all_l, y_with_outliers_all_l))
